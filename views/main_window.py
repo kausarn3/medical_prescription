@@ -21,7 +21,7 @@ from views.dashboard import Dashboard
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Login with Tilt Effect")
+        self.setWindowTitle("Medical Prescription")
         self.setFixedSize(800, 500)
 
         # Tilt view for the left pane
