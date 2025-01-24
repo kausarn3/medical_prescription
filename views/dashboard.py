@@ -4,7 +4,6 @@ from PyQt6.QtWidgets import (
     QApplication,
     QLabel,
     QVBoxLayout,
-    QGridLayout,
     QHBoxLayout,
     QPushButton,
     QLineEdit,
@@ -13,13 +12,17 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from resources.styles import Dashboard_styles as Styles
 from views.prescription_ui import CreatePrescriptionUI
+from db.database_manager import DatabaseManager
 
 class Dashboard(QWidget):
-    def __init__(self, username):
+    def __init__(self, doctor_info):
         super().__init__()
         self.setWindowTitle("Dashboard")
         #self.setFixedSize(800, 500)
-        self.username = username
+        self.resize(500, 700)
+        self.doctor_info = doctor_info
+        self.username = self.doctor_info[4]
+        self.db_manager = DatabaseManager("db/prescriptions.db")
         self.init_ui()
 
     def init_ui(self):
@@ -32,11 +35,9 @@ class Dashboard(QWidget):
 
         # Add to main layout
         self.main_layout.addWidget(self.sidebar_widget, 1)
-        self.main_layout.addLayout(self.content_area, 3)
+        self.main_layout.addLayout(self.content_area, 4)
         self.setLayout(self.main_layout)
 
-        # Add welcome message
-        self.add_welcome_message()
         self.show_dashboard_ui()
 
     def create_sidebar(self):
@@ -69,7 +70,8 @@ class Dashboard(QWidget):
             self.show_about_ui()
 
     def show_create_prescription_ui(self):
-        create_prescription_ui = CreatePrescriptionUI()
+        self.add_welcome_message()
+        create_prescription_ui = CreatePrescriptionUI(None, self.doctor_info)
         self.content_area.addWidget(create_prescription_ui)
 
     def add_welcome_message(self):
@@ -81,6 +83,7 @@ class Dashboard(QWidget):
 
     def show_dashboard_ui(self):
         # Fetch insights from the prescription database
+        self.add_welcome_message()
         insights = self.get_prescription_insights()
 
         insights_layout = QHBoxLayout()
@@ -119,6 +122,7 @@ class Dashboard(QWidget):
         ]
 
     def show_search_ui(self):
+        self.add_welcome_message()
         search_bar = QLineEdit(self)
         search_bar.setPlaceholderText("🔎 Search Patient by Name or Phone")
         search_bar.setStyleSheet(Styles.SEARCH_BAR_STYLE)
@@ -138,6 +142,7 @@ class Dashboard(QWidget):
         self.content_area.addWidget(self.results_area)
 
     def show_about_ui(self):
+        self.add_welcome_message()
         about_label = QLabel(
             "About Us\n\n"
             "Designed and Developed by:\n"
@@ -178,7 +183,7 @@ class Dashboard(QWidget):
             self.clear_search_results()
             return
 
-        results = self.query_database(query)
+        results = self.db_manager.search_patients(query)
         self.display_search_results(results)
 
     def clear_search_results(self):
@@ -187,19 +192,6 @@ class Dashboard(QWidget):
                 widget = self.results_layout.itemAt(i).widget()
                 if widget:
                     widget.deleteLater()
-
-    def query_database(self, query):
-        with sqlite3.connect("db/prescriptions.db") as connection:
-            cursor = connection.cursor()
-            cursor.execute(
-                """
-                SELECT serial_no, name, phone_no
-                FROM prescriptions
-                WHERE name LIKE ? OR phone_no LIKE ? 
-                """,
-                (f"%{query}%", f"%{query}%"),
-            )
-            return cursor.fetchall()
 
     def display_search_results(self, results):
         self.clear_search_results()
@@ -218,7 +210,7 @@ class Dashboard(QWidget):
             self.results_layout.addWidget(no_results_label)
 
     def open_patient_details(self, patient_id):
-        self.dashboard = CreatePrescriptionUI(patient_id)
+        self.dashboard = CreatePrescriptionUI(patient_id, self.doctor_info)
         self.dashboard.show()
 
 

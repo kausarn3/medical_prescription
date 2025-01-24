@@ -6,46 +6,19 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 from datetime import datetime
+from db.database_manager import DatabaseManager
 
 class CreatePrescriptionUI(QWidget):
-    def __init__(self, serial_no=None):
+    def __init__(self, serial_no=None, doctor_info=None):
         super().__init__()
         self.attached_images = []
+        self.db_manager = DatabaseManager("db/prescriptions.db")
         self.serial_no = serial_no  # Will be None for new prescriptions
-        self._setup_database()
+        self.doctor_info = doctor_info
         self._setup_ui()
 
         if self.serial_no:
             self._load_data(self.serial_no)
-
-    def _setup_database(self):
-        self.conn = sqlite3.connect("db/prescriptions.db")
-        self.cursor = self.conn.cursor()
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS "prescriptions" (
-            "serial_no"	INTEGER,
-            "doctor_id"	INTEGER,
-            "date"	DATE,
-            "name"	TEXT,
-            "age"	TEXT,
-            "sex"	TEXT,
-            "weight"	TEXT,
-            "bp"	BLOB,
-            "observations"	TEXT,
-            "prescription"	TEXT,
-            "phone_no"	NUMERIC,
-            PRIMARY KEY("serial_no" AUTOINCREMENT)
-            )
-        """)
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS images (
-                image_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                serial_no INTEGER,
-                image_path TEXT,
-                FOREIGN KEY (serial_no) REFERENCES prescriptions (serial_no)
-            )
-        """)
-        self.conn.commit()
 
     def _setup_ui(self):
         main_layout = QVBoxLayout()
@@ -53,62 +26,69 @@ class CreatePrescriptionUI(QWidget):
 
         main_layout.addWidget(self._create_header_section())
         main_layout.addLayout(self._create_patient_details_section())
-        main_layout.addWidget(self._create_label("Observations:", bold=True))
+        main_layout.addWidget(self._create_label("Observations:", bold=True, fontsize=14))
         self.observations_text = QTextEdit()
+        self.observations_text.setStyleSheet("font-weight: bold;")
         main_layout.addWidget(self.observations_text)
 
-        main_layout.addWidget(self._create_label("Prescription:", bold=True))
+        main_layout.addWidget(self._create_label("Prescription:", bold=True, fontsize=14))
         self.prescription_text = QTextEdit()
+        self.prescription_text.setStyleSheet("font-weight: bold;")
         main_layout.addWidget(self.prescription_text)
 
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self._save_to_database)
         main_layout.addWidget(self.save_button)
 
-        footer_label = QLabel("Contact/Appointment: 7001849780\nEmail: raybakhatoon24@gmail.com")
-        footer_label.setFont(QFont("Arial", 10))
+        footer_label = self._create_label(f"Contact/Appointment: {self.doctor_info[8]}\nEmail: {self.doctor_info[9]}", bold=True, fontsize=12)
         footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer_label.setStyleSheet("font-style: italic;color: #eb300b;")
         main_layout.addWidget(footer_label)
 
     def _create_header_section(self):
         header_layout = QVBoxLayout()
 
-        clinic_name = QLabel("Gulshan Holistic Homeopathic Clinic")
-        clinic_name.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        clinic_name = self._create_label(f"{self.doctor_info[3]}", bold=True, fontsize=14)
+        clinic_name.setStyleSheet("color: #eb300b;")
         clinic_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(clinic_name)
 
-        doctor_details = QLabel("Dr. Rayba Khatoon\nB.H.M.S (WBUHS), MD (PGT)\nConsultant Homeopathic Physician")
-        doctor_details.setFont(QFont("Arial", 12))
+        doctor_details = self._create_label(f"{self.doctor_info[4]}\n{self.doctor_info[5]}\n{self.doctor_info[6]}", bold=True, fontsize=14)
+        doctor_details.setStyleSheet("font-style: italic;color: #eb300b;")
         doctor_details.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(doctor_details)
 
         header_frame = QFrame()
         header_frame.setLayout(header_layout)
         return header_frame
+    
+    def _create_line_edit(self):
+        line_edit = QLineEdit()
+        line_edit.setStyleSheet("font-weight: bold;")
+        return line_edit
 
     def _create_patient_details_section(self):
         patient_layout = QGridLayout()
 
         self._add_grid_row(patient_layout, 0, [
-            ("Serial No:", QLabel("123" if not self.serial_no else str(self.serial_no))),
-            ("Doctor ID:", QLabel("101")),
+            ("Serial No:", self._create_label("123" if not self.serial_no else str(self.serial_no), bold=True)),
+            ("Doctor ID:", self._create_label(f"{self.doctor_info[7]}", bold=True)),
         ])
 
         self._add_grid_row(patient_layout, 1, [
-            ("Last Visit:", QLabel(datetime.today().strftime("%d-%m-%Y"))),
+            ("Last Visit:", self._create_label(datetime.today().strftime("%d-%m-%Y"), bold=True)),
         ])
 
         self._add_grid_row(patient_layout, 2, [
-            ("Name:", QLineEdit()),
-            ("Age:", QLineEdit()),
+            ("Name:", self._create_line_edit()),
+            ("Age:", self._create_line_edit()),
             ("Sex:", self._create_combo_box(["Male", "Female", "Other"])),
-            ("Weight:", QLineEdit()),
-            ("BP:", QLineEdit()),
+            ("Weight:", self._create_line_edit()),
+            ("BP:", self._create_line_edit()),
         ])
 
         self._add_grid_row(patient_layout, 3, [
-            ("Phone Number:", QLineEdit()) ])
+            ("Phone Number:", self._create_line_edit()) ])
 
         self.serial_no_display = patient_layout.itemAtPosition(0, 1).widget()
         self.date_input = patient_layout.itemAtPosition(1, 1).widget()
@@ -123,27 +103,24 @@ class CreatePrescriptionUI(QWidget):
 
     def _add_grid_row(self, layout, row, widgets):
         for col, (label, widget) in enumerate(widgets):
-            layout.addWidget(QLabel(label), row, col * 2)
+            layout.addWidget(self._create_label(label, bold=True), row, col * 2)
             layout.addWidget(widget, row, col * 2 + 1)
 
-    def _create_label(self, text, bold=False):
+    def _create_label(self, text, bold=False, fontsize=11):
         label = QLabel(text)
-        font = QFont("Arial", 12, QFont.Weight.Bold if bold else QFont.Weight.Normal)
+        font = QFont("Arial", fontsize, QFont.Weight.Bold if bold else QFont.Weight.Normal)
+        #label.setStyleSheet("color: #206de5;")
         label.setFont(font)
         return label
 
     def _create_combo_box(self, items):
         combo_box = QComboBox()
+        combo_box.setStyleSheet("font-size: 12px;font-weight: bold;")        
         combo_box.addItems(items)
         return combo_box
 
     def _load_data(self, serial_no):
-        self.cursor.execute("""
-            SELECT * FROM prescriptions WHERE serial_no = ?
-        """, (serial_no,))
-        prescription_data = self.cursor.fetchone()
-        print(prescription_data)
-
+        prescription_data = self.db_manager.fetch_prescription(serial_no)
         if prescription_data:
             # Fill in the details from the prescription data
             self.date_input.setText(prescription_data[2])
@@ -154,7 +131,7 @@ class CreatePrescriptionUI(QWidget):
             self.bp_input.setText(prescription_data[7])
             self.observations_text.setText(prescription_data[8])
             self.prescription_text.setText(prescription_data[9])
-
+            self.phone_number.setText(str(prescription_data[10]))
             # Load images
             # self.cursor.execute("""
             #     SELECT image_path FROM images WHERE serial_no = ?
@@ -182,29 +159,20 @@ class CreatePrescriptionUI(QWidget):
         try:
             if self.serial_no:
                 # Update existing prescription
-                self.cursor.execute("""
-                    UPDATE prescriptions SET doctor_id = ?, date = ?, name = ?, age = ?, sex = ?, weight = ?, bp = ?, observations = ?, prescription = ?,
-                    phone_no = ?  WHERE serial_no = ?
-                """, (doctor_id, date, name, age, sex, weight, bp, observations, prescription, phone_no, self.serial_no))
-                self.conn.commit()
+                self.db_manager.update_prescription(self.serial_no, doctor_id, date, name, age, sex, weight, bp, observations, prescription, phone_no)
             else:
                 # Insert new prescription
-                self.cursor.execute("""
-                    INSERT INTO prescriptions (doctor_id, date, name, age, sex, weight, bp, observations, prescription, phone_no)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (doctor_id, date, name, age, sex, weight, bp, observations, prescription, phone_no))
-                self.conn.commit()
-                self.serial_no = self.cursor.lastrowid
+                self.db_manager.insert_prescription(doctor_id, date, name, age, sex, weight, bp, observations, prescription, phone_no)
 
             # Save images
-            for image_path in self.attached_images:
-                self.cursor.execute("""
-                    INSERT INTO images (serial_no, image_path)
-                    VALUES (?, ?)
-                """, (self.serial_no, image_path))
-            self.conn.commit()
+            # for image_path in self.attached_images:
+            #     self.cursor.execute("""
+            #         INSERT INTO images (serial_no, image_path)
+            #         VALUES (?, ?)
+            #     """, (self.serial_no, image_path))
+            # self.conn.commit()
 
-            QMessageBox.information(self, "Success", f"Prescription saved successfully! Serial No: {self.serial_no}")
+            QMessageBox.information(self, "Success", f"Prescription saved successfully!")
             self._clear_form()
 
         except sqlite3.Error as e:

@@ -16,11 +16,14 @@ from PyQt6.QtWidgets import (
 from views.tilt_view import TiltView
 from resources.styles import Main_window_Styles as Styles
 from views.dashboard import Dashboard
+from db.database_manager import DatabaseManager
 
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.db = DatabaseManager("db/prescriptions.db")
+        self.db.create_tables()
         self.setWindowTitle("Medical Prescription")
         self.setFixedSize(800, 500)
 
@@ -34,7 +37,7 @@ class MainWindow(QWidget):
 
         # Create the username (email) and password fields
         self.username_input = QLineEdit(self)
-        self.username_input.setPlaceholderText("📨 Email")
+        self.username_input.setPlaceholderText("📨 Username")
         self.username_input.setStyleSheet(Styles.INPUT_FIELD)
 
         self.password_input = QLineEdit(self)
@@ -48,11 +51,12 @@ class MainWindow(QWidget):
         self.login_button.setStyleSheet(Styles.LOGIN_BUTTON)
         self.login_button.clicked.connect(self.handle_login)
 
-        # Forgot password link
+        # Sign up link
         forgot_password_label = QLabel("<a href='#'>No Account Create one</a>", self)
         forgot_password_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         forgot_password_label.setStyleSheet(Styles.LINK_LABEL)
         forgot_password_label.setOpenExternalLinks(False)
+        forgot_password_label.linkActivated.connect(self.show_forgot_password_dialog)
 
         # Get License
         create_account_label = QLabel("<a href='#'>Activate your App →</a>", self)
@@ -97,24 +101,22 @@ class MainWindow(QWidget):
     def handle_login(self):
         username = self.username_input.text()
         password = self.password_input.text()
-
         if not username or not password:
             self.show_message("Error", "Please enter both username and password.")
             return
-
-        if self.authenticate_user(username, password):
-            self.open_dashboard()
+        res = self.authenticate_user(username, password)
+        if res is not None:
+            if username == res[1] and password == res[2]:
+                self.open_dashboard(res)
+            else:
+                self.show_message("Error", "Invalid username or password.")
         else:
-            self.show_message("Error", "Invalid username or password.")
+            self.show_message("Warning", "No user found with the given credentials.")        
 
     def authenticate_user(self, username, password):
         try:
-            conn = sqlite3.connect("db/prescriptions.db")
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
-            result = cursor.fetchone()
-            conn.close()
-            return result is not None
+            result = self.db.authenticate_user(username, password)
+            return result
         except sqlite3.Error as e:
             self.show_message("Database Error", str(e))
             return False
@@ -126,8 +128,8 @@ class MainWindow(QWidget):
         msg.setIcon(QMessageBox.Icon.Warning if title == "Error" else QMessageBox.Icon.Information)
         msg.exec()
 
-    def open_dashboard(self):
-        self.dashboard = Dashboard( self.username_input.text())
+    def open_dashboard(self, res):
+        self.dashboard = Dashboard(res)
         self.dashboard.show()
         self.close()
 
