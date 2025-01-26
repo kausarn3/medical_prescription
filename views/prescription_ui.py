@@ -39,8 +39,8 @@ class CreatePrescriptionUI(QWidget):
         self.prescription_text.setStyleSheet("font-weight: bold;")
         main_layout.addWidget(self.prescription_text)
 
-        self.save_button = QPushButton("Save")        
-        self.save_button.setFixedSize(100, 45)
+        self.save_button = QPushButton("  Save  ")        
+        #self.save_button.setFixedSize(100, 45)
         self.save_button.setStyleSheet(Styles.LOGIN_BUTTON)
         self.save_button.clicked.connect(self._save_to_database)
 

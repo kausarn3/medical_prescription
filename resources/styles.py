@@ -35,9 +35,10 @@ class Main_window_Styles:
         QPushButton {
             background-color: #4CAF50; 
             color: white;              
-            border: none;             
-            padding: 10px 20px;   
-            font-size: 16px;      
+            border: none;       
+            border-radius: 10px;       
+            padding: 8px 15px;   
+            font-size: 13px;       
         }
 
         QPushButton:hover {
@@ -86,9 +87,10 @@ class Dashboard_styles:
     QPushButton {
         background-color: #4CAF50; 
         color: white;              
-        border: none;             
-        padding: 10px 20px;       
-        font-size: 16px;          
+        border: none;       
+        border-radius: 10px;       
+        padding: 8px 15px;   
+        font-size: 13px;            
     }
     QPushButton:hover {
         background-color: #45a049; 
