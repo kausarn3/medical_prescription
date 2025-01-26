@@ -7,6 +7,8 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QLineEdit,
+    QSpacerItem,
+    QSizePolicy,
     QScrollArea,
 )
 from PyQt6.QtCore import Qt
@@ -15,9 +17,10 @@ from views.prescription_ui import CreatePrescriptionUI
 from db.database_manager import DatabaseManager
 
 class Dashboard(QWidget):
-    def __init__(self, doctor_info):
+    def __init__(self, doctor_info, main_window):
         super().__init__()
         self.setWindowTitle("Dashboard")
+        self.main_window = main_window
         #self.setFixedSize(800, 500)
         self.resize(500, 700)
         self.doctor_info = doctor_info
@@ -76,10 +79,29 @@ class Dashboard(QWidget):
 
     def add_welcome_message(self):
         """Adds a persistent welcome message at the top of the content area."""
+        welcome_layout = QHBoxLayout()
+        
         welcome_label = QLabel(f"Welcome, {self.username}!", self)
-        welcome_label.setAlignment(Qt.AlignmentFlag.AlignTop)
+        #welcome_label.setAlignment(Qt.AlignmentFlag.AlignTop)
         welcome_label.setStyleSheet(Styles.WELCOME_LABEL_STYLE)
-        self.content_area.addWidget(welcome_label)
+        welcome_layout.addWidget(welcome_label)
+
+        logout_button = QPushButton("Logout", self)
+        logout_button.setStyleSheet(Styles.LOGOUT_BUTTON)
+        logout_button.clicked.connect(self.handle_logout)
+        welcome_layout.addWidget(logout_button, alignment=Qt.AlignmentFlag.AlignRight)
+
+        welcome_widget = QWidget()
+        welcome_widget.setLayout(welcome_layout)
+        self.content_area.addWidget(welcome_widget)
+    
+    def handle_logout(self):
+        # Implement the logout functionality here
+        self.close()
+        # Show the main window
+        self.main_window.show()
+        self.main_window.username_input.clear()
+        self.main_window.password_input.clear()
 
     def show_dashboard_ui(self):
         # Fetch insights from the prescription database
@@ -201,13 +223,17 @@ class Dashboard(QWidget):
                 result_label = QLabel(f"Name: {name}, Phone: {phone}", self)
                 result_label.setStyleSheet(Styles.RESULT_LABEL_STYLE)
                 result_label.mouseDoubleClickEvent = lambda event, pid=patient_id: self.open_patient_details(pid)
-                result_label.setFixedSize(300, 50)
+                #result_label.setFixedSize(300, 50)
                 self.results_layout.addWidget(result_label)
         else:
             no_results_label = QLabel("No results found.", self)
             no_results_label.setStyleSheet(Styles.NO_RESULTS_LABEL_STYLE)
             no_results_label.setFixedSize(300, 50)
             self.results_layout.addWidget(no_results_label)
+
+        #self.results_layout.addItem(QSpacerItem(1,1, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        self.results_layout.setContentsMargins(0, 0, 0, 0)
+        self.results_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
     def open_patient_details(self, patient_id):
         self.dashboard = CreatePrescriptionUI(patient_id, self.doctor_info)

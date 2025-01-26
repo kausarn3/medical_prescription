@@ -133,7 +133,7 @@ class MainWindow(QWidget):
         msg.exec()
 
     def open_dashboard(self, res):
-        self.dashboard = Dashboard(res)
+        self.dashboard = Dashboard(res, self)
         self.dashboard.show()
         self.close()
 

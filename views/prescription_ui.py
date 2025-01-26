@@ -19,6 +19,7 @@ class CreatePrescriptionUI(QWidget):
         self.prescription_data = self.db_manager.fetch_prescription(serial_no)
         self._setup_ui()
         if self.serial_no:
+            self.setWindowTitle("Edit Prescription")
             self._load_data(self.serial_no)
 
     def _setup_ui(self):
@@ -108,7 +109,7 @@ class CreatePrescriptionUI(QWidget):
             ("Phone Number:", self._create_line_edit()) ])
 
         self.serial_no_display = patient_layout.itemAtPosition(0, 1).widget()
-        self.doctor_id = patient_layout.itemAtPosition(0, 2).widget()
+        self.doctor_id = patient_layout.itemAtPosition(0, 3).widget()
         self.date_input = patient_layout.itemAtPosition(1, 1).widget()
         self.name_input = patient_layout.itemAtPosition(2, 1).widget()
         self.age_input = patient_layout.itemAtPosition(2, 3).widget()

@@ -68,19 +68,19 @@ class Main_window_Styles:
 
 class Dashboard_styles:
     DASHBOARD_BUTTON_STYLE = """
-QPushButton {
-    background-color: #a7a6a8;
-    border: none;
-    border-radius: 10px;
-    padding: 10px;
-    font-size: 14px;
-    color: #333;
-    height:60px;
-}
-QPushButton:hover {
-    background-color: #dfdedf;
-}
-"""
+        QPushButton {
+            background-color: #a7a6a8;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 14px;
+            color: #333;
+            height:60px;
+        }
+        QPushButton:hover {
+            background-color: #dfdedf;
+        }
+        """
 
     SAVE_BUTTON_STYLE = """
     QPushButton {
@@ -133,3 +133,22 @@ QPushButton:hover {
             "background-color: #ccccff; font-size: 20px; color: #0000ff; padding: 20px; border-radius: 10px; width: 200px; height: 200px; word-wrap: break-word;",
             "background-color: #ffffcc; font-size: 20px; color: #ffff00; padding: 20px; border-radius: 10px; width: 200px; height: 200px; word-wrap: break-word;"
         ]
+    
+    LOGOUT_BUTTON = """
+        QPushButton {
+            background-color: #e21313; 
+            color: white;              
+            border: none;      
+            border-radius: 10px;       
+            padding: 8px 15px;   
+            font-size: 13px;      
+        }
+
+        QPushButton:hover {
+            background-color: #ec7474; 
+        }
+
+        QPushButton:pressed {
+            background-color: #f20606; 
+        }
+    """
