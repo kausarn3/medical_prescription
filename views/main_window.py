@@ -117,8 +117,6 @@ class MainWindow(QWidget):
             if username == res[1] and password == res[2]:
                 self.open_dashboard(res)
             
-               
-
     def authenticate_user(self, username, password):
         try:
             result = self.db.authenticate_user(username, password)
@@ -147,9 +145,11 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         username = QLineEdit(dialog)
         username.setPlaceholderText("Enter Username")
+        username.setStyleSheet(Styles.INPUT_FIELD)
 
         activation_code = QLineEdit(dialog)
         activation_code.setPlaceholderText("Enter Activation code")
+        activation_code.setStyleSheet(Styles.INPUT_FIELD)
 
         message = QLabel(f"Please Share Secret code: {get_windows_mac_address()} to the admin to activate the app.")
         message.setStyleSheet("font-size: 10px; font-weight: bold;Font-style: italic;")
