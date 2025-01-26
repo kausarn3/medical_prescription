@@ -1,3 +1,6 @@
+from PyQt5.QtGui import QLinearGradient, QBrush, QColor
+from PyQt5.QtCore import Qt
+
 class Main_window_Styles:
     # Main form widget styles
     FORM_WIDGET = """
@@ -21,6 +24,11 @@ class Main_window_Styles:
         background: #F0F0F0;
         margin-bottom: 5px;
     """
+    # Input field styles
+    CREATE_ACCOUNT_INPUT_FIELD = """
+        background: #F0F0F0;
+    """
+    
 
     # Login button styles
     LOGIN_BUTTON = """
@@ -46,6 +54,15 @@ class Main_window_Styles:
         color: #777;
         font-size: 12px;
     """
+
+    @staticmethod
+    def apply_gradient():
+        return """
+        background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 1,
+            stop: 0 #11a7b1, stop: 1 #8de4ea
+        );
+        """
 
 
 

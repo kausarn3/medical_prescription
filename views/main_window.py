@@ -17,6 +17,7 @@ from views.tilt_view import TiltView
 from resources.styles import Main_window_Styles as Styles
 from views.dashboard import Dashboard
 from db.database_manager import DatabaseManager
+from utils.crypt import get_windows_mac_address, decrypt_mac_address
 
 
 class MainWindow(QWidget):
@@ -56,14 +57,14 @@ class MainWindow(QWidget):
         forgot_password_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         forgot_password_label.setStyleSheet(Styles.LINK_LABEL)
         forgot_password_label.setOpenExternalLinks(False)
-        forgot_password_label.linkActivated.connect(self.show_forgot_password_dialog)
+        forgot_password_label.linkActivated.connect(self.show_signup_dialog)
 
         # Get License
         create_account_label = QLabel("<a href='#'>Activate your App →</a>", self)
         create_account_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         create_account_label.setStyleSheet(Styles.LINK_LABEL)
         create_account_label.setOpenExternalLinks(False)
-        create_account_label.linkActivated.connect(self.show_forgot_password_dialog)
+        create_account_label.linkActivated.connect(self.show_activation_dialog)
 
         # Form layout for the fields
         form_layout = QFormLayout()
@@ -105,13 +106,18 @@ class MainWindow(QWidget):
             self.show_message("Error", "Please enter both username and password.")
             return
         res = self.authenticate_user(username, password)
-        if res is not None:
+
+        if res is None:
+            self.show_message("Error", "Invalid username or password or user does not exist")
+            return
+        else:        
+            if res[10] == get_windows_mac_address():
+                self.show_message("Error", "App not activated. Please activate the app.")
+                return 
             if username == res[1] and password == res[2]:
                 self.open_dashboard(res)
-            else:
-                self.show_message("Error", "Invalid username or password.")
-        else:
-            self.show_message("Warning", "No user found with the given credentials.")        
+            
+               
 
     def authenticate_user(self, username, password):
         try:
@@ -133,25 +139,160 @@ class MainWindow(QWidget):
         self.dashboard.show()
         self.close()
 
-    def show_forgot_password_dialog(self):
+    def show_activation_dialog(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Activate your App")
         dialog.setFixedSize(300, 200)
 
         layout = QVBoxLayout()
-        info_label = QLabel("Enter Activation code :", dialog)
-        info_label.setWordWrap(True)
+        username = QLineEdit(dialog)
+        username.setPlaceholderText("Enter Username")
 
-        email_input = QLineEdit(dialog)
-        email_input.setPlaceholderText("Activation code")
+        activation_code = QLineEdit(dialog)
+        activation_code.setPlaceholderText("Enter Activation code")
+
+        message = QLabel(f"Please Share Secret code: {get_windows_mac_address()} to the admin to activate the app.")
+        message.setStyleSheet("font-size: 10px; font-weight: bold;Font-style: italic;")
+        message.setWordWrap(True)
 
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, dialog)
         button_box.setStyleSheet(Styles.LOGIN_BUTTON)
-        button_box.accepted.connect(lambda: self.handle_forgot_password(email_input.text(), dialog))
+        button_box.accepted.connect(lambda: self.handle_activation_dialog(username.text(), activation_code.text(),dialog))
         button_box.rejected.connect(dialog.reject)
 
-        layout.addWidget(info_label)
-        layout.addWidget(email_input)
+        layout.addWidget(username)
+        layout.addWidget(activation_code)
+        layout.addWidget(message)
         layout.addWidget(button_box)
         dialog.setLayout(layout)
         dialog.exec()
+
+    def show_signup_dialog(self):
+        signup_dialog = QDialog(self)
+        signup_dialog.setWindowTitle("Create Account")
+        signup_dialog.setFixedSize(800, 600)
+
+        layout = QVBoxLayout()
+        #layout.setStyleSheet(Styles.FORM_WIDGET)
+        title_label = QLabel("Create a New Account")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
+
+        form_layout = QFormLayout()
+        
+        username_input = QLineEdit()
+        username_input.setPlaceholderText("Username")
+        username_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+        password_input = QLineEdit()
+        password_input.setPlaceholderText("Password")
+        password_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+        password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        confirm_password_input = QLineEdit()
+        confirm_password_input.setPlaceholderText("Confirm Password")
+        confirm_password_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+        confirm_password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        clinic_name_input = QLineEdit()
+        clinic_name_input.setPlaceholderText("Clinic Name")
+        clinic_name_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+        name_input = QLineEdit()
+        name_input.setPlaceholderText("Name")
+        name_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+        qualifications_input = QLineEdit()
+        qualifications_input.setPlaceholderText("Qualifications")
+        qualifications_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+        designation_input = QLineEdit()
+        designation_input.setPlaceholderText("Designation")
+        designation_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)  
+        doctor_id_input = QLineEdit()
+        doctor_id_input.setPlaceholderText("Doctor ID")
+        doctor_id_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+        phone_no_input = QLineEdit()
+        phone_no_input.setPlaceholderText("Phone Number")
+        phone_no_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+        email_input = QLineEdit()
+        email_input.setPlaceholderText("Email")
+        email_input.setStyleSheet(Styles.CREATE_ACCOUNT_INPUT_FIELD)
+
+        form_layout.addRow("Username:", username_input)
+        form_layout.addRow("Password:", password_input)
+        form_layout.addRow("Confirm Password:", confirm_password_input)
+        form_layout.addRow("Clinic Name:", clinic_name_input)
+        form_layout.addRow("Name:", name_input)
+        form_layout.addRow("Qualifications:", qualifications_input)
+        form_layout.addRow("Designation:", designation_input)
+        form_layout.addRow("Doctor ID:", doctor_id_input)
+        form_layout.addRow("Phone Number:", phone_no_input)
+        form_layout.addRow("Email:", email_input)
+
+        form_widget = QWidget()
+        form_widget.setLayout(form_layout)
+        form_widget.setStyleSheet("background-color: white; padding: 10px; border-radius: 15px;font-weight: bold;")
+
+
+        signup_button = QPushButton("Sign Up")
+        signup_button.setFixedSize(100, 45)
+        signup_button.setStyleSheet(Styles.LOGIN_BUTTON)
+        signup_button.clicked.connect(lambda: self.handle_signup(
+            username_input, password_input, confirm_password_input, clinic_name_input, name_input, 
+            qualifications_input, designation_input, doctor_id_input, phone_no_input, email_input, signup_dialog))
+
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(signup_button)
+        button_layout.addStretch()
+
+        layout.addWidget(title_label)
+        layout.addSpacing(20)
+        layout.addWidget(form_widget)
+        layout.addSpacing(20)
+        layout.addLayout(button_layout)
+
+        signup_dialog.setLayout(layout)
+        signup_dialog.exec()
+
+    def handle_signup(self, username_input, password_input, confirm_password_input, clinic_name_input, name_input, 
+                      qualifications_input, designation_input, doctor_id_input, phone_no_input, email_input, dialog):
+        username = username_input.text()
+        password = password_input.text()
+        confirm_password = confirm_password_input.text()
+        clinic_name = clinic_name_input.text()
+        name = name_input.text()
+        qualifications = qualifications_input.text()
+        designation = designation_input.text()
+        doctor_id = doctor_id_input.text()
+        phone_no = phone_no_input.text()
+        email = email_input.text()
+        mac_address = get_windows_mac_address()
+
+        if not all([username, password, confirm_password, clinic_name, name, qualifications, designation, doctor_id, phone_no, email]):
+            self.show_message("Error", "All fields are mandatory.")
+            return
+
+        if password != confirm_password:
+            self.show_message("Error", "Passwords do not match.")
+            return
+
+        # Add logic to save the user data to the database here
+        if self.db.insert_user(username, password, clinic_name, name, qualifications, designation, doctor_id, phone_no, email, mac_address):
+            self.show_message("Success", "Account created successfully.")
+        else:
+            self.show_message("Error", "Failed to create account. Please try again.")
+        dialog.accept()
+
+    def handle_activation_dialog(self, username,activation_code, dialog):
+        if not username or not activation_code:
+            self.show_message("Error", "Username and Activation is required.")
+            return
+        # Add logic to activate the app here
+        res = self.db.fetch_mac_address(username)
+        if res is None:
+            self.show_message("Error", "No user found with the given username.")
+            return
+        
+        if res[0] != decrypt_mac_address(activation_code, b'NxhLBBnSCAsWT_I-fxUIJqfRGI4SoG-1bqpS4nhcPR0=').replace("b'", "").replace("'", ""):
+            self.show_message("Error", "Invalid activation code.")
+            return
+        else:
+            self.db.insert_mac_address(username, activation_code)
+            self.show_message("Success", "App activated successfully.")
+            dialog.accept()

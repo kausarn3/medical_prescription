@@ -1,12 +1,13 @@
 import sys
 import sqlite3
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QVBoxLayout, QGridLayout, QLineEdit, QTextEdit, QPushButton, QFrame, QMessageBox, QComboBox
+    QHBoxLayout, QWidget, QLabel, QVBoxLayout, QGridLayout, QLineEdit, QTextEdit, QPushButton, QFrame, QMessageBox, QComboBox
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 from datetime import datetime
 from db.database_manager import DatabaseManager
+from resources.styles import Main_window_Styles as Styles
 
 class CreatePrescriptionUI(QWidget):
     def __init__(self, serial_no=None, doctor_info=None):
@@ -15,13 +16,14 @@ class CreatePrescriptionUI(QWidget):
         self.db_manager = DatabaseManager("db/prescriptions.db")
         self.serial_no = serial_no  # Will be None for new prescriptions
         self.doctor_info = doctor_info
+        self.prescription_data = self.db_manager.fetch_prescription(serial_no)
         self._setup_ui()
-
         if self.serial_no:
             self._load_data(self.serial_no)
 
     def _setup_ui(self):
         main_layout = QVBoxLayout()
+        #self.setStyleSheet(Styles.apply_gradient())
         self.setLayout(main_layout)
 
         main_layout.addWidget(self._create_header_section())
@@ -36,14 +38,23 @@ class CreatePrescriptionUI(QWidget):
         self.prescription_text.setStyleSheet("font-weight: bold;")
         main_layout.addWidget(self.prescription_text)
 
-        self.save_button = QPushButton("Save")
+        self.save_button = QPushButton("Save")        
+        self.save_button.setFixedSize(100, 45)
+        self.save_button.setStyleSheet(Styles.LOGIN_BUTTON)
         self.save_button.clicked.connect(self._save_to_database)
-        main_layout.addWidget(self.save_button)
+
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(self.save_button)
+        button_layout.addStretch()
+
+        main_layout.addLayout(button_layout)
 
         footer_label = self._create_label(f"Contact/Appointment: {self.doctor_info[8]}\nEmail: {self.doctor_info[9]}", bold=True, fontsize=12)
         footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer_label.setStyleSheet("font-style: italic;color: #eb300b;")
         main_layout.addWidget(footer_label)
+
 
     def _create_header_section(self):
         header_layout = QVBoxLayout()
@@ -70,10 +81,16 @@ class CreatePrescriptionUI(QWidget):
     def _create_patient_details_section(self):
         patient_layout = QGridLayout()
 
-        self._add_grid_row(patient_layout, 0, [
-            ("Serial No:", self._create_label("123" if not self.serial_no else str(self.serial_no), bold=True)),
-            ("Doctor ID:", self._create_label(f"{self.doctor_info[7]}", bold=True)),
-        ])
+        if self.serial_no:
+            serial_doctor_id = [("Serial No:", self._create_label(self.serial_no if not self.serial_no else str(self.serial_no), bold=True)),
+            ("Doctor ID:", self._create_label(f"", bold=True)),]
+        else:
+            # From db calculate serial no
+            serial_no = self.db_manager.get_serial_no()
+            serial_doctor_id = [("Serial No:", self._create_label(str(serial_no + 1) if not self.serial_no else str(self.serial_no), bold=True)),
+            ("Doctor ID:", self._create_label(f"{self.doctor_info[7]}", bold=True)),]
+
+        self._add_grid_row(patient_layout, 0, serial_doctor_id)
 
         self._add_grid_row(patient_layout, 1, [
             ("Last Visit:", self._create_label(datetime.today().strftime("%d-%m-%Y"), bold=True)),
@@ -91,6 +108,7 @@ class CreatePrescriptionUI(QWidget):
             ("Phone Number:", self._create_line_edit()) ])
 
         self.serial_no_display = patient_layout.itemAtPosition(0, 1).widget()
+        self.doctor_id = patient_layout.itemAtPosition(0, 2).widget()
         self.date_input = patient_layout.itemAtPosition(1, 1).widget()
         self.name_input = patient_layout.itemAtPosition(2, 1).widget()
         self.age_input = patient_layout.itemAtPosition(2, 3).widget()
@@ -120,18 +138,19 @@ class CreatePrescriptionUI(QWidget):
         return combo_box
 
     def _load_data(self, serial_no):
-        prescription_data = self.db_manager.fetch_prescription(serial_no)
-        if prescription_data:
+        
+        if self.prescription_data:
             # Fill in the details from the prescription data
-            self.date_input.setText(prescription_data[2])
-            self.name_input.setText(prescription_data[3])
-            self.age_input.setText(prescription_data[4])
-            self.sex_input.setCurrentText(prescription_data[5])
-            self.weight_input.setText(prescription_data[6])
-            self.bp_input.setText(prescription_data[7])
-            self.observations_text.setText(prescription_data[8])
-            self.prescription_text.setText(prescription_data[9])
-            self.phone_number.setText(str(prescription_data[10]))
+            self.doctor_id.setText(str(self.prescription_data[1]))
+            self.date_input.setText(self.prescription_data[2])
+            self.name_input.setText(self.prescription_data[3])
+            self.age_input.setText(self.prescription_data[4])
+            self.sex_input.setCurrentText(self.prescription_data[5])
+            self.weight_input.setText(self.prescription_data[6])
+            self.bp_input.setText(str(self.prescription_data[7]))
+            self.observations_text.setText(self.prescription_data[8])
+            self.prescription_text.setText(self.prescription_data[9])
+            self.phone_number.setText(str(self.prescription_data[10]))
             # Load images
             # self.cursor.execute("""
             #     SELECT image_path FROM images WHERE serial_no = ?
@@ -141,7 +160,7 @@ class CreatePrescriptionUI(QWidget):
             #     self.attached_images.append(image_path[0])
 
     def _save_to_database(self):
-        doctor_id = 101  # Static Doctor ID
+        doctor_id = self.doctor_info[7]  # Static Doctor ID
         date = datetime.today().strftime("%d-%m-%Y")
         name = self.name_input.text()
         age = self.age_input.text()

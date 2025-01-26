@@ -47,6 +47,7 @@ class DatabaseManager:
                     "doctor_id"	INTEGER,
                     "phone_no"	NUMERIC,
                     "email"	TEXT,
+	                "mac_address"	TEXT,
                     PRIMARY KEY("id" AUTOINCREMENT)
                 )   
             """)
@@ -108,4 +109,34 @@ class DatabaseManager:
                 WHERE name LIKE ? OR phone_no LIKE ?
             """, (f"%{query}%", f"%{query}%"))
             return cursor.fetchall()
+        
+    def insert_user(self, username, password, clinic_name, name, qualifications, designation, doctor_id, phone_no, email, mac_address):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO users (username, password, clinic_name, name, qualifications, designation, doctor_id, phone_no, email, mac_address)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (username, password, clinic_name, name, qualifications, designation, doctor_id, phone_no, email, mac_address))
+            conn.commit()
+            return cursor.lastrowid
+                
+    def get_serial_no(self):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT MAX(serial_no) FROM prescriptions")
+            result = cursor.fetchone()
+            return result[0] if result[0] is not None else 0
+        
+    def fetch_mac_address(self, username):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT mac_address, username FROM users WHERE username = ?", (username,))
+            result = cursor.fetchone()
+            return result
+        
+    def insert_mac_address(self, username, mac_address):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET mac_address = ? WHERE username = ?", (mac_address, username))
+            conn.commit()
         
