@@ -115,10 +115,10 @@ class Dashboard(QWidget):
 
     def get_prescription_insights(self):
         # This is a placeholder function. Replace it with actual database queries.
+        total_patient, prescriptions_today =self.db_manager.get_total_patients_and_prescriptions_today()
         return [
-            "Total Patients: 120",
-            "Prescriptions Issued Today: 15",
-            "Most Common Medication: Paracetamol"
+            f"Total Patients: {total_patient}",
+            f"Prescriptions Issued Today: {prescriptions_today}",
         ]
 
     def show_search_ui(self):

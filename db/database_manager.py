@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 class DatabaseManager:
     def __init__(self, db_path):
@@ -139,4 +140,14 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute("UPDATE users SET mac_address = ? WHERE username = ?", (mac_address, username))
             conn.commit()
+
+    def get_total_patients_and_prescriptions_today(self):
+        today_date = datetime.today().strftime("%d-%m-%Y")
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(DISTINCT name) FROM prescriptions")
+            total_patients = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM prescriptions WHERE date = ?", (today_date,))
+            prescriptions_today = cursor.fetchone()[0]
+        return total_patients, prescriptions_today
         
