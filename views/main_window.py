@@ -1,5 +1,6 @@
 # main_window.py
 import sqlite3
+import os
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget,
@@ -23,7 +24,8 @@ from utils.crypt import get_windows_mac_address, decrypt_mac_address
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.db = DatabaseManager("db/prescriptions.db")
+        self.db = DatabaseManager(os.path.join(os.getcwd(),"db//prescriptions.db"))
+        print(os.path.join(os.getcwd(),"db/prescriptions.db"))
         self.db.create_tables()
         self.setWindowTitle("Medical Prescription")
         self.setFixedSize(800, 500)
